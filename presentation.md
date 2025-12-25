@@ -579,12 +579,22 @@ sudo netscanner
 <!-- pause -->
 
 ```bash +exec
-mpv assets/concertus.mp4
+mpv assets/concertus.mp4 &> /dev/null
 ```
 
 <!-- alignment: center -->
 
 [](https://github.com/Jaxx497/concertus)
+
+<!-- pause -->
+
+---
+
+```bash +exec
+mpv assets/yamusic.mp4 &> /dev/null
+```
+
+[](https://github.com/yamusic/yamusic)
 
 <!-- end_slide -->
 
@@ -710,6 +720,12 @@ handlr open https://orhun.dev/ratzilla/demo/
 
 <!-- end_slide -->
 
+```bash +exec
+mpv assets/ratatui-kindle.mp4 &> /dev/null
+```
+
+<!-- end_slide -->
+
 <!-- alignment: center -->
 
 ![](assets/suzui-rs.jpg)
@@ -719,14 +735,32 @@ Ratatui on `Suzuki Baleno`
 
 <!-- end_slide -->
 
+![image:width:55%](assets/ratatui-dualshock.jpg)
+
+<!-- alignment: center -->
+
+Ratatui dualshock tester
+
+
+<!-- end_slide -->
+
 <!-- new_lines: 1 -->
 
 ![image:width:100%](assets/ratatui-psp.png)
+
 
 <!-- alignment: center -->
 
 Ratatui on `PSP`  
 `https://github.com/overdrivenpotato/rust-psp/pull/190`
+
+<!-- end_slide -->
+
+![image:width:100%](assets/ratatui-t-dongle.jpg)
+
+<!-- alignment: center -->
+
+Ratatui on T-Dongle ESP32-S3
 
 <!-- end_slide -->
 
@@ -1041,9 +1075,14 @@ And I need you help.
 
 <!-- pause -->
 
-## Announcement
+## Mercimek
 
-- https://mercimek.space
+<!-- pause -->
+
+```bash +exec
+handlr open https://mercimek.space
+```
+
 
 <!-- end_slide -->
 
@@ -1054,6 +1093,8 @@ Lastly...
 All the slides run in the terminal btw
 
 ✨ Slides: [](https://github.com/orhun/terminal-survival-guide-talk)
+
+![](assets/rat-win.gif)
 
 <!-- end_slide -->
 
