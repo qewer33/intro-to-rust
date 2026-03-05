@@ -8,50 +8,9 @@ theme:
       right: ""
 ---
 
-![](assets/banner.jpeg)
+![image:width:100%](assets/banner.jpeg)
 
 <!-- no_footer -->
-
-<!-- end_slide -->
-
-<!-- alignment: center -->
-
-![image:width:30%](assets/enchanting-table.gif)
-
-THE ULTIMATE  
-**Terminal Survival Guide**
-
----
-
-**Orhun Parmaksız**
-
-🐀
-
-<!-- no_footer -->
-
-<!-- end_slide -->
-
-## Questions
-
-![image:width:30%](assets/rat-cup-2.gif)
-
-<!-- alignment: center -->
-
-<!-- pause -->
-
-How many of you use the terminal?
-
-<!-- pause -->
-
-How many of you do open source?
-
-<!-- pause -->
-
-How many of you use Rust?
-
-<!-- pause -->
-
-How many of you know about `Ratatui`?
 
 <!-- end_slide -->
 
@@ -104,137 +63,400 @@ How many of you know about `Ratatui`?
 
 <!-- end_slide -->
 
+## Questions
+
+![image:width:30%](assets/rat-cup-2.gif)
+
 <!-- alignment: center -->
 
-<!-- new_lines: 2 -->
+<!-- pause -->
 
-ok...
+How many of you know about Rust?
 
 <!-- pause -->
 
-**Imagine a rat.**
+How many of you write Rust?
 
 <!-- pause -->
+
+How many of you write terminal applications?
+
+<!-- end_slide -->
+
+<!-- alignment: center -->
+
+![image:width:30%](assets/enchanting-table.gif)
+
+<!-- new_lines: 1 -->
+
+## Chapter 0x1
+
+#### Why Rust?
+
+<!-- no_footer -->
+
+<!-- end_slide -->
+
+# System Programming
+
+- Writing software that interacts directly with the OS or hardware
+
+<!-- pause -->
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+## Examples
+
+- Terminal tools (👑)
+- Operating systems
+- Embedded firmware
+- Package managers
+- Databases
+- Compilers
+
+<!-- pause -->
+
+<!-- column: 1 -->
+
+## Challenges
+
+- Memory safety
+- Undefined behavior
+- Resource leaks
+- Debugging at low level
+
+<!-- reset_layout -->
+
+<!-- pause -->
+
+> Segmentation fault (core dumped)
+>
+> malloc(): corrupted top size
+>
+> \*\*\* stack smashing detected \*\*\*
+
+<!-- end_slide -->
+
+![image:width:100%](assets/xkcd.png)
+
+<!-- no_footer -->
+
+<!-- end_slide -->
+
+![image:width:50%](assets/meme1.jpg)
+
+<!-- no_footer -->
+
+<!-- end_slide -->
+
+# What's wrong with this code? (1/5)
+
+```c {1-12|5|7|9|11|1-12|11} +line_numbers
+#include <stdlib.h>
+#include <stdio.h>
+
+int main() {
+    int *p = malloc(sizeof(int));
+
+    *p = 42;
+
+    free(p);
+
+    printf("%d\n", *p);
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+Memory freed. Pointer still used.
+
+<!-- end_slide -->
+
+## **Ownership** 🦀
+
+```rust {1-5|3-4} +line_numbers
+fn main() {
+    let x = Box::new(42);
+    drop(x);
+    println!("{}", x);
+}
+```
+
+<!-- pause -->
+
+```
+error[E0382]: borrow of moved value: `x`
+2 |     let x = Box::new(42);
+3 |     drop(x);
+  |          - value moved here
+4 |     println!("{}", x);
+  |                    ^ value borrowed here after move
+```
+
+Prevents `use-after-free`, eliminates dangling pointers at compile time.
+
+<!-- end_slide -->
+
+![image:width:60%](assets/learning-rust.jpg)
+
+<!-- no_footer -->
+
+<!-- end_slide -->
+
+# What's wrong with this code? (2/5)
+
+```c {1-16|6,14,15} +line_numbers
+#include <pthread.h>
+
+int counter = 0;
+
+void* inc(void* _) {
+    counter++;
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+    pthread_create(&t1, NULL, inc, NULL);
+    pthread_create(&t2, NULL, inc, NULL);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+Data race. Undefined behavior.
+
+<!-- end_slide -->
+
+## **Borrowing Rules** 🦀
+
+```rust {1-5|3|4} +line_numbers
+fn main() {
+    let mut x = 0;
+    let r1 = &mut x;
+    let r2 = &mut x;
+}
+```
+
+<!-- pause -->
+
+```
+error[E0499]: cannot borrow `x` as mutable more than once at a time
+3 |     let r1 = &mut x;
+4 |     let r2 = &mut x;
+  |              ^^^^^^ second mutable borrow occurs here
+```
+
+<!-- alignment: center -->
+
+Only one mutable reference at a time.  
+Prevents aliasing-based race conditions at compile time.
+
+<!-- end_slide -->
+
+# What's wrong with this code? (3/5)
+
+```c {1-4|3} +line_numbers
+int* foo() {
+    int x = 10;
+    return &x;
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+RIP `x` 💀
+
+Returning address of a local variable.
+
+`x` is destroyed after function returns.
+
+<!-- end_slide -->
+
+## **Lifetimes** 🦀
+
+```rust {1-4|2-3} +line_numbers
+fn foo() -> &i32 {
+    let x = 10;
+    &x
+}
+```
+
+<!-- pause -->
+
+```
+error[E0106]: missing lifetime specifier
+error[E0515]: cannot return reference to local variable `x`
+3 |     &x
+  |     ^^ returns a reference to data owned by the current function
+```
+
+<!-- alignment: center -->
+
+References cannot outlive the data they point to.
+
+<!-- end_slide -->
+
+# What's wrong with this code? (4/5)
+
+```c {1-8|4,8} +line_numbers
+#include <stdio.h>
+
+int main() {
+    FILE* f = fopen("data.txt", "r");
+    if (!f) return 1;
+
+    return 0;
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+File opened.
+Never closed.
+Resource leak.
+
+<!-- end_slide -->
+
+## **Drop (RAII)** 🦀
+
+```rust {1-6|4,6} +line_numbers
+use std::fs::File;
+
+fn main() -> std::io::Result<()> {
+    let _f = File::open("data.txt")?;
+    Ok(())
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+File is automatically closed when `_f` goes out of scope.
+
+Deterministic cleanup. No forgotten `fclose()`.
+
+No garbage collector!
+No manual memory management!
+
+<!-- end_slide -->
+
+# What's wrong with this code? (5/5)
+
+```c {1-10|4,9} +line_numbers
+#include <stdio.h>
+
+int main() {
+    FILE* f = fopen("data.txt", "r");
+
+    char buf[16];
+    fgets(buf, sizeof(buf), f);
+
+    printf("%s\n", buf);
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+`fopen` may return NULL.  
+Error ignored.  
+Crash later.
+
+<!-- end_slide -->
+
+## **Result & Type System** 🦀
+
+```rust {1-6|4} +line_numbers
+use std::fs::File;
+
+fn main() {
+    let f = File::open("data.txt");
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+```
+expected enum `Result<File, std::io::Error>`
+```
+
+You must handle the error:
+
+```rust
+let f = File::open("data.txt")?;
+```
+
+Errors are part of the type system.  
+You cannot "forget" them.
+
+<!-- end_slide -->
+
+<!-- alignment: center -->
+
+| Rust Concept | Prevents                   |
+| ------------ | -------------------------- |
+| Ownership    | Use-after-free             |
+| Borrowing    | Data races / aliasing bugs |
+| Lifetimes    | Dangling references        |
+| Drop (RAII)  | Resource leaks             |
+| Result       | Ignored errors             |
 
 ![](assets/rat-cup.gif)
 
-<!-- pause -->
-
-_rat wants to download MP3_
-
-<!-- pause -->
-
-_rat goes to ytmp3downloader.cc_
-
-<!-- no_footer -->
-
 <!-- end_slide -->
 
-![image:width:100%](assets/ads.gif)
-
-<!-- pause -->
-
-<!-- jump_to_middle -->
-
-![](assets/rat-cry.gif)
+![image:width:45%](assets/pills.gif)
 
 <!-- alignment: center -->
 
-<!-- no_footer -->
-
-<!-- end_slide -->
-
-<!-- no_footer -->
-
-<!-- alignment: center -->
-
-<!-- new_lines: 3 -->
-
-**Imagine a rat (again)**
-
-![](assets/rat-cup-2.gif)
-
-<!-- pause -->
-
-_rat wants to find the `cheese.txt`_
-
-<!-- pause -->
-
-_rat uses file search_
-
-<!-- end_slide -->
-
-<!-- no_footer -->
-
-![image:width:40%](assets/loading-bar.png)
-
-<!-- pause -->
-
-![](assets/loading-bar-1.png)
-
-<!-- pause -->
-
-![](assets/loading-bar-2.png)
-
-<!-- pause -->
-
-<!-- jump_to_middle -->
-
-![](assets/rat-tired.gif)
+Now you are Rust-pilled.
 
 <!-- end_slide -->
 
 <!-- alignment: center -->
 
-<!-- new_lines: 3 -->
+![image:width:30%](assets/enchanting-table.gif)
 
-<!-- no_footer -->
+<!-- new_lines: 1 -->
 
-**Imagine a rat (sorry)**
+## Chapter 0x2
 
-![](assets/rat-sus.gif)
-
-<!-- pause -->
-
-_rat wants to monitor network traffic_
-
-<!-- pause -->
-
-_rat runs a GUI tool_
-
-<!-- pause -->
-
-<!-- end_slide -->
-
-<!-- no_footer -->
-
-![image:width:50%](assets/clicking.gif)
-
-<!-- pause -->
-
-```bash +exec
-wireshark
-```
-
-<!-- end_slide -->
-
-![image:width:40%](assets/rat-boom.gif)
-
-<!-- alignment: center -->
-
-_rat explodes._
+#### Terminal applications
 
 <!-- no_footer -->
 
 <!-- end_slide -->
 
-<!-- jump_to_middle -->
+# System programming
 
-<!-- alignment: center -->
+doesn't have to mean kernels....
 
-Solution?
+<!-- pause -->
 
-<!-- no_footer -->
+Sometimes it means:
+
+- CLI tools.
+- Terminal apps.
+- Developer tooling.
+
+![](assets/rat-thumb.gif)
 
 <!-- end_slide -->
 
@@ -266,7 +488,7 @@ rio
 
 <!-- end_slide -->
 
-### It's almost 2026, why still terminal?
+### It's 2026, why still terminal?
 
 <!-- pause -->
 
@@ -313,41 +535,249 @@ rio
 
 <!-- end_slide -->
 
-<!-- jump_to_middle -->
+## "I want to download MP3 from YouTube"
 
-Terminal is the past, present and future. █
+<!-- new_lines: 1 -->
 
-<!-- pause -->
+<!-- column_layout: [1, 1] -->
 
-<!-- alignment: right -->
-
-_how do I download MP3 tho_?
+<!-- column: 0 -->
 
 <!-- pause -->
 
-<!-- alignment: left -->
+![image:width:100%](assets/computer_vapor.gif)
 
-ah, right!
+<!-- column: 1 -->
+
+<!-- new_lines: 6 -->
+
+<!-- pause -->
+
+```bash
+$ yt-dlp -f bestaudio
+  --extract-audio
+  --audio-format mp3
+  --audio-quality 0
+```
 
 <!-- end_slide -->
 
-Downloading MP3:
+## "I want to search for text in files"
 
-```bash
-$ yt-dlp -f bestaudio --extract-audio --audio-format mp3
-```
+<!-- new_lines: 1 -->
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
 
 <!-- pause -->
 
-Searching files:
+![image:width:100%](assets/computer_vapor3.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 6 -->
+
+<!-- pause -->
 
 ```bash +exec +acquire_terminal
 ig 'fn main' /home/orhun/gh/
 ```
 
+<!-- end_slide -->
+
+## "I want to monitor my network traffic"
+
+<!-- new_lines: 1 -->
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
 <!-- pause -->
 
-Monitoring network:
+![image:width:100%](assets/computer_vapor2.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 4 -->
+
+<!-- pause -->
+
+# oryx
+
+https://github.com/pythops/oryx
+
+```sh +exec +acquire_terminal
+sudo oryx -i wlp3s0
+```
+
+<!-- end_slide -->
+
+<!-- column_layout: [2, 2, 4, 2] -->
+
+<!-- column: 1 -->
+
+<!-- jump_to_middle -->
+
+**RUST IN THE TERMINAL █**
+
+<!-- no_footer -->
+
+<!-- column: 2 -->
+
+<!-- new_lines: 6 -->
+
+![image:width:80%](assets/crab.gif)
+
+<!-- end_slide -->
+
+## Ecosystem
+
+<!-- pause -->
+
+![image:width:26%](assets/crate.gif)
+
+rustc, rustup, clippy, rust-analyzer, rustlings, rustfmt, rust-bindgen, cargo
+
+<!-- pause -->
+
+cargo-about, cargo-audit, cargo-binstall, cargo-bloat, cargo-clone, cargo-crev, cargo-deb, cargo-deny, cargo-depgraph, cargo-dist, cargo-edit, cargo-expand, cargo-generate, cargo-generate-rpm, cargo-hack, cargo-insta, cargo-llvm-cov, cargo-machete, cargo-make, cargo-modules, cargo-msrv, cargo-nextest, cargo-outdated, cargo-public-api, cargo-semver-checks...
+
+<!-- end_slide -->
+
+## Libraries
+
+`https://lib.rs/command-line-interface`
+
+<!-- pause -->
+
+### clap: _Command Line Argument Parser_
+
+```rust +line_numbers
+use clap::Parser;
+
+/// Simple program to greet a person
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Name of the person to greet
+    #[arg(short, long)]
+    name: String,
+
+    /// Number of times to greet
+    #[arg(short, long, default_value_t = 1)]
+    count: u8,
+}
+```
+
+<!-- end_slide -->
+
+```sh +exec +acquire_terminal
+unbuffer git cliff -h | less -R
+```
+
+![image:width:90%](assets/liquid.gif)
+
+<!-- end_slide -->
+
+### colored: _Colorize your terminal output_
+
+<!-- pause -->
+
+```bash
+echo -e "\033[34mthis is blue\033[0m"
+```
+
+<!-- pause -->
+
+```rust +line_numbers
+use colored::Colorize;
+
+"this is blue".blue();
+
+"this is red".red();
+
+"this is red on blue".red().on_blue();
+```
+
+<!-- end_slide -->
+
+### duct: Library for running child processes
+
+<!-- pause -->
+
+```bash
+echo out && echo err 1>&2
+```
+
+<!-- pause -->
+
+```rust
+use duct::cmd;
+use std::io::{BufReader, prelude::*};;
+
+// Merge standard error into standard output
+// and read both incrementally
+let out = cmd!("bash", "-c", "echo out && echo err 1>&2");
+let reader = out.stderr_to_stdout().reader()?;
+let mut lines = BufReader::new(reader).lines();
+
+assert_eq!(lines.next().unwrap()?, "out");
+assert_eq!(lines.next().unwrap()?, "err");
+```
+
+<!-- column_layout: [2, 1] -->
+
+<!-- column: 1-->
+
+<!-- pause -->
+
+## And many more...
+
+<!-- end_slide -->
+
+## Demo time
+
+Let's vibe code an app.
+
+![](assets/rat-eyes.gif)
+
+<!-- end_slide -->
+
+<!-- alignment: center -->
+
+![image:width:30%](assets/enchanting-table.gif)
+
+<!-- new_lines: 1 -->
+
+## Chapter 0x3
+
+#### Ratatui
+
+<!-- no_footer -->
+
+<!-- end_slide -->
+
+## Remember "oryx"?
+
+<!-- new_lines: 1 -->
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+<!-- pause -->
+
+![image:width:100%](assets/computer_vapor2.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 4 -->
+
+# oryx
+
+https://github.com/pythops/oryx
 
 ```sh +exec +acquire_terminal
 sudo oryx -i wlp3s0
@@ -465,7 +895,7 @@ Ok cool, but how do we build these TUIs?
 <!-- pause -->
 
 ```bash +exec
-handlr open https://ratatui.ling.ooo
+handlr open https://ratatui.rs
 ```
 
 <!-- end_slide -->
@@ -473,6 +903,229 @@ handlr open https://ratatui.ling.ooo
 ```bash +exec +acquire_terminal
 cargo run --manifest-path ratatui/examples/apps/demo2/Cargo.toml
 ```
+
+<!-- end_slide -->
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+## Widgets
+
+- Block
+- BarChart
+- Calendar
+- Canvas
+- Chart
+- Gauge
+- LineGauge
+- List
+- Paragraph
+- Scrollbar
+- Sparkline
+- Table
+- Tabs
+- ...
+
+- Anything that implements `Widget` trait
+
+<!-- column: 1 -->
+
+<!-- pause -->
+
+## Key Concepts
+
+- Rendering
+- Layout
+- Event handling
+
+![image:width:60%](assets/ratcopter.gif)
+
+> https://ratatui.rs
+
+<!-- end_slide -->
+
+### Minimal Example
+
+<!-- pause -->
+
+```rust {1-20|5|6|7,16-18|8-11|12-14|1-20} +line_numbers
+use ratatui::crossterm::event::{self, Event};
+use ratatui::{text::Text, Frame};
+
+fn main() -> std::io::Result<()> {
+    let mut terminal = ratatui::init();
+    loop {
+        terminal.draw(draw)?;
+        if matches!(event::read()?, Event::Key(_)) {
+            break;
+        }
+    }
+    ratatui::restore();
+    Ok(())
+}
+
+fn draw(frame: &mut Frame) {
+    frame.render_widget("Hello World!", frame.area());
+}
+```
+
+<!-- end_slide -->
+
+```rust {1-13|3}
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use crossterm::event;
+    ratatui::run(|terminal| loop {
+        terminal.draw(|frame| {
+            frame.render_widget("Hello world", frame.area())
+        })?;
+
+        if matches!(event::read()?, event::Event::Key(_)) {
+            break Ok(());
+        }
+    })
+}
+```
+
+![image:width:100%](assets/rat-drink.gif)
+
+<!-- end_slide -->
+
+### 1. Rendering
+
+<!-- pause -->
+
+<!-- column_layout: [3, 1] -->
+
+<!-- column: 0 -->
+
+```rust {1-16|1|1,4,9|6,11|1-16} +line_numbers
+let mut toggle = false;
+loop {
+    terminal.draw(|frame: &mut Frame| {
+        if toggle {
+            frame.render_widget(
+                BarChart::default()
+                //...
+            );
+        } else {
+            frame.render_widget(
+                LineGauge::default()
+                //...
+            );
+        }
+    });
+}
+```
+
+<!-- column: 1 -->
+
+<!-- new_lines: 7 -->
+
+![](assets/rat-dance.gif)
+
+<!-- end_slide -->
+
+### 2. Layout
+
+<!-- pause -->
+
+<!-- column_layout: [8, 2] -->
+
+<!-- column: 1 -->
+
+<!-- new_lines: 11 -->
+
+![](assets/rat-point.gif)
+
+<!-- column: 0 -->
+
+```rust {1-9|2|3-7|1-9} +line_numbers
+let layout = Layout::default()
+    .direction(Direction::Horizontal)
+    .constraints(&[
+        Constraint::Length(10),
+        Constraint::Percentage(70),
+        Constraint::Min(5),
+    ])
+    .split(frame.area());
+```
+
+<!-- pause -->
+
+```rust +line_numbers
+let percent =
+  if msg_count > 50 { 80 } else { 50 };
+
+let contraints = &[
+  Constraint::Percentage(percent),
+  Constraint::Percentage(100 - percent)
+];
+```
+
+<!-- end_slide -->
+
+#### Constraints
+
+```bash +exec +acquire_terminal
+cd ratatui
+cargo run -p constraint-explorer
+```
+
+<!-- pause -->
+
+#### Flex
+
+```bash +exec +acquire_terminal
+cd ratatui
+cargo run -p flex
+```
+
+<!-- end_slide -->
+
+### 3. Event Handling
+
+<!-- pause -->
+
+- Backends: `crossterm`, `termion`, `termwiz`
+
+<!-- pause -->
+
+#### Strategies
+
+- Centralized event handling
+- Centralized catching, message passing
+- Distributed event loops/segmented applications
+
+<!-- new_lines: 1 -->
+
+![image:width:25%](assets/rat-ski.gif)
+
+<!-- end_slide -->
+
+```rust {1-11|1-2|6|1-11} +line_numbers
+let timeout = Duration::from_secs_f64(1.0 / 60.0);
+if !event::poll(timeout)? {
+    return Ok(());
+}
+
+if let Event::Key(key) = event::read()? {
+    match key.code {
+        KeyCode::Char('q') | KeyCode::Esc => break,
+        _ => {}
+    }
+}
+```
+
+![image:width:100%](assets/sphere.gif)
+
+<!-- end_slide -->
+
+```bash
+$ cargo generate ratatui/templates
+```
+
+![](assets/rat-cup-2.gif)
 
 <!-- end_slide -->
 
@@ -496,13 +1149,11 @@ cargo run --manifest-path ratatui/examples/apps/demo2/Cargo.toml
 
 <!-- end_slide -->
 
-<!-- new_lines: 4 -->
+![](assets/rat-demand.gif)
 
 <!-- alignment: center -->
 
-### Survival Tips
-
-![](assets/rat-ski.gif)
+MORE!
 
 <!-- no_footer -->
 
@@ -654,12 +1305,26 @@ MORE!
 
 Add shader-like effects to your terminal applications.
 
-[](https://github.com/junkdog/tachyonfx)
+[](https://github.com/ratatui/tachyonfx)
 
 ---
 
 ```bash +exec +acquire_terminal
 exabind
+```
+
+<!-- end_slide -->
+
+# bevy-tui-texture
+
+A Bevy plugin for rendering terminal UIs using Ratatui and WPGU.
+
+[](https://github.com/tt-toe/bevy_tui_texture)
+
+---
+
+```bash +exec
+mpv assets/bevy-tui-texture.mp4
 ```
 
 <!-- end_slide -->
@@ -692,8 +1357,8 @@ handlr open https://orhun.dev/ratzilla/demo/
 
 | Repository                          | Description                                 |
 | ----------------------------------- | ------------------------------------------- |
+| _ratatui_/`mousefood`               | embedded-graphics backend                   |
 | _reubeno_/`tui-uefi`                | UEFI                                        |
-| _j-g00da_/`mousefood`               | embedded-graphics backend                   |
 | _Jesterhearts_/`ratatui-wgpu`       | GPU-accelerated rendering to a buffer       |
 | _gold-silver-copper_/`egui_ratatui` | EGUI widget                                 |
 | _gold-silver-copper_/`soft_ratatui` | Pure software rendering to arbitrary buffer |
@@ -710,7 +1375,7 @@ handlr open https://orhun.dev/ratzilla/demo/
 
 <!-- alignment: center -->
 
-[](https://github.com/j-g00da/mousefood)
+[](https://github.com/ratatui/mousefood)
 
 ![image:width:87%](assets/rat-cheese.gif)
 
@@ -741,13 +1406,11 @@ Ratatui on `Suzuki Baleno`
 
 Ratatui dualshock tester
 
-
 <!-- end_slide -->
 
 <!-- new_lines: 1 -->
 
 ![image:width:100%](assets/ratatui-psp.png)
-
 
 <!-- alignment: center -->
 
@@ -842,6 +1505,30 @@ Live demo at Rust Forge!
 
 <!-- end_slide -->
 
+<!-- new_lines: 1 -->
+
+![image:width:80%](assets/rustnation-demo.jpg)
+
+<!-- alignment: center -->
+
+[](https://www.youtube.com/watch?v=btqNDDuZ3cI)
+
+<!-- end_slide -->
+
+<!-- alignment: center -->
+
+![image:width:30%](assets/enchanting-table.gif)
+
+<!-- new_lines: 1 -->
+
+## Chapter 0x4
+
+#### Open Source
+
+<!-- no_footer -->
+
+<!-- end_slide -->
+
 ### Question...
 
 ![image:width:35%](assets/rat-question.gif)
@@ -862,7 +1549,7 @@ How do you survive?
 
 <!-- end_slide -->
 
-I just love **OPEN SOURCE**! 👾✨
+I just love **OPEN SOURCE**.
 
 ---
 
@@ -938,7 +1625,7 @@ The rules of developing an `Open Source Grindset` are:
 
 ![image:width:100%](assets/git-wrapped-orhun-1.png)
 
-Currently on a **2510** day commit streak...
+Currently on a **2581** day commit streak...
 
 ![](assets/rat-cheese.gif)
 
@@ -1032,21 +1719,13 @@ Open source is more powerful than you think █
 
 <!-- pause -->
 
-And I need you help.
+And you can be part of it.
 
 <!-- no_footer -->
 
 <!-- end_slide -->
 
-<!-- alignment: center -->
-
-![](assets/rat-atm.gif)
-
-![image:width:100%](assets/sponsor-qr.png)
-
-[](https://github.com/sponsors/orhun)
-
-<!-- end_slide -->
+<!-- new_lines: 6 -->
 
 ### What you can do:
 
@@ -1061,29 +1740,6 @@ And I need you help.
 - Spread the word
 - Just build stuff™
 
-<!-- pause -->
-
----
-
-### Any ideas for next episodes?
-
-- How to cook with Ratatui?
-- Free software vs open source?
-- Story of XZ
-
----
-
-<!-- pause -->
-
-## Mercimek
-
-<!-- pause -->
-
-```bash +exec
-handlr open https://mercimek.space
-```
-
-
 <!-- end_slide -->
 
 Lastly...
@@ -1091,8 +1747,6 @@ Lastly...
 <!-- pause -->
 
 All the slides run in the terminal btw
-
-✨ Slides: [](https://github.com/orhun/terminal-survival-guide-talk)
 
 ![](assets/rat-win.gif)
 
