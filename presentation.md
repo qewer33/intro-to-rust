@@ -5,7 +5,7 @@ theme:
     footer:
       style: template
       left: "@orhundev"
-      right: ""
+      right: "{current_slide} / {total_slides}"
 ---
 
 ![image:width:100%](assets/banner.jpeg)
@@ -201,6 +201,108 @@ Prevents `use-after-free`, eliminates dangling pointers at compile time.
 
 <!-- end_slide -->
 
+## **Ownership** 🦀 _(but make it make sense)_
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:80%](assets/rat-cup.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 2 -->
+
+Every value has **one owner**.
+
+<!-- pause -->
+
+The owner holds the cup.
+
+<!-- pause -->
+
+Owner leaves the room → cup goes in the bin. 🗑️
+
+<!-- pause -->
+
+Hand the cup to someone else → **you don't have a cup anymore.**
+
+<!-- end_slide -->
+
+## **Ownership** 🦀 _(the move)_
+
+```rust {1-5|3|4} +line_numbers
+fn main() {
+    let cheese = String::from("🧀");
+    let stolen = cheese;
+    println!("{}", cheese);
+}
+```
+
+<!-- pause -->
+
+```
+error[E0382]: borrow of moved value: `cheese`
+4 |     println!("{}", cheese);
+  |                    ^^^^^^ value borrowed here after move
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+You gave the cheese away.
+
+You don't have cheese anymore. 🐭💔
+
+<!-- end_slide -->
+
+## Your turn 🐭
+
+![image:width:25%](assets/rat-question.gif)
+
+<!-- alignment: center -->
+
+Make this compile. **Two ways.**
+
+```rust +line_numbers
+fn main() {
+    let cheese = String::from("🧀");
+    let stolen = cheese;
+    println!("{}", cheese);
+}
+```
+
+<!-- pause -->
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+### Option A: share it
+
+```rust
+let stolen = &cheese;
+```
+
+<!-- column: 1 -->
+
+### Option B: make a copy
+
+```rust
+let stolen = cheese.clone();
+```
+
+<!-- reset_layout -->
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+_(foreshadowing the next chapter 👀)_
+
+<!-- end_slide -->
+
 ![image:width:60%](assets/learning-rust.jpg)
 
 <!-- no_footer -->
@@ -262,6 +364,115 @@ Prevents aliasing-based race conditions at compile time.
 
 <!-- end_slide -->
 
+## **Borrowing** 🦀 _(but make it make sense)_
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:80%](assets/rat-cheese.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 1 -->
+
+The rat owns the cheese. 🧀
+
+<!-- pause -->
+
+You can **look** at it.  → `&cheese`
+
+<!-- pause -->
+
+A whole crowd can look at once. 👀👀👀
+
+<!-- pause -->
+
+But only **one** rat can take a bite. → `&mut cheese`
+
+<!-- pause -->
+
+And nobody else may even glance while it bites. 🚫
+
+<!-- end_slide -->
+
+## **Borrowing** 🦀 _(the classic trap)_
+
+```rust {1-7|4|5} +line_numbers
+fn main() {
+    let mut snacks = vec!["🧀", "🥓", "🍞"];
+    for snack in &snacks {
+        if snack == &"🧀" {
+            snacks.push("🐭");
+        }
+    }
+}
+```
+
+<!-- pause -->
+
+```
+error[E0502]: cannot borrow `snacks` as mutable
+              because it is also borrowed as immutable
+3 |     for snack in &snacks {
+  |                  ------- immutable borrow occurs here
+5 |             snacks.push("🐭");
+  |             ^^^^^^^^^^^^^^^^^ mutable borrow occurs here
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+You can't rearrange the buffet while someone's eating from it. 🍽️
+
+<!-- end_slide -->
+
+## Your turn 🐭
+
+![image:width:25%](assets/rat-question.gif)
+
+<!-- alignment: center -->
+
+Why won't this compile? **Spot the rule it breaks.**
+
+```rust +line_numbers
+fn main() {
+    let mut name = String::from("Ratatui");
+    let r = &name;
+    name.push_str(" 🐭");
+    println!("{}", r);
+}
+```
+
+<!-- pause -->
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+### The rule
+
+Can't mutate while  
+something is reading.
+
+<!-- column: 1 -->
+
+### The fix
+
+Use `r` **before** mutating,  
+or clone it.
+
+<!-- reset_layout -->
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+_(but wait — how does the compiler know when the borrow ends? 👀)_
+
+<!-- end_slide -->
+
 # What's wrong with this code? (3/5)
 
 ```c {1-4|3} +line_numbers
@@ -304,6 +515,118 @@ error[E0515]: cannot return reference to local variable `x`
 <!-- alignment: center -->
 
 References cannot outlive the data they point to.
+
+<!-- end_slide -->
+
+## **Lifetimes** 🦀 _(but make it make sense)_
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:80%](assets/rat-look.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 1 -->
+
+A reference is a finger 👉 pointing at something.
+
+<!-- pause -->
+
+It's only valid while the thing it points to **still exists**.
+
+<!-- pause -->
+
+If the thing disappears... your finger points at nothing. 👻
+
+<!-- pause -->
+
+A **lifetime** is just _how long the compiler can prove the thing is still there._
+
+<!-- pause -->
+
+That's it. That's the whole concept. 🐭
+
+<!-- end_slide -->
+
+## **Lifetimes** 🦀 _(the dangling finger)_
+
+```rust {1-8|3-6|5|7} +line_numbers
+fn main() {
+    let r;
+    {
+        let cheese = String::from("🧀");
+        r = &cheese;
+    }
+    println!("{}", r);
+}
+```
+
+<!-- pause -->
+
+```
+error[E0597]: `cheese` does not live long enough
+5 |         r = &cheese;
+  |             ^^^^^^^ borrowed value does not live long enough
+6 |     }
+  |     - `cheese` dropped here while still borrowed
+7 |     println!("{}", r);
+  |                    - borrow later used here
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+The cheese is gone. The finger still points. 👉👻
+
+<!-- end_slide -->
+
+## Your turn 🐭
+
+![image:width:25%](assets/rat-question.gif)
+
+<!-- alignment: center -->
+
+**Where does the cheese die?** Make it compile.
+
+```rust +line_numbers
+fn main() {
+    let r;
+    {
+        let cheese = String::from("🧀");
+        r = &cheese;
+    }
+    println!("{}", r);
+}
+```
+
+<!-- pause -->
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+### Option A: keep cheese alive
+
+Move `let cheese` to  
+the **outer** scope.
+
+<!-- column: 1 -->
+
+### Option B: don't outlive it
+
+Move `println!` **inside**  
+the inner scope.
+
+<!-- reset_layout -->
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+_(good news: most of the time you never write `'a` by hand — the compiler infers it 🐭✨)_
 
 <!-- end_slide -->
 
@@ -351,6 +674,110 @@ Deterministic cleanup. No forgotten `fclose()`.
 
 No garbage collector!
 No manual memory management!
+
+<!-- end_slide -->
+
+## **Drop** 🦀 _(but make it make sense)_
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:80%](assets/rat-tired.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 1 -->
+
+When a value leaves the scope, Rust runs **cleanup** for it.
+
+<!-- pause -->
+
+The rat doesn't have to remember.
+
+<!-- pause -->
+
+The kitchen cleans itself. 🧹
+
+<!-- pause -->
+
+No `free`. No `fclose`. No `defer`. No GC pause.
+
+<!-- pause -->
+
+Just `}`.
+
+<!-- end_slide -->
+
+## **Drop** 🦀 _(wait, you can hook into this?)_
+
+```rust {1-12|3-7|10|12} +line_numbers
+struct Rat;
+
+impl Drop for Rat {
+    fn drop(&mut self) {
+        println!("🐭 rat leaves the kitchen");
+    }
+}
+
+fn main() {
+    let _r = Rat;
+    println!("👨‍🍳 cooking...");
+}
+```
+
+<!-- pause -->
+
+```
+👨‍🍳 cooking...
+🐭 rat leaves the kitchen
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+Cleanup runs **at the closing brace**, automatically, in reverse order.
+
+That's how `File`, `Vec`, `MutexGuard`, `TcpStream` all work. 🪄
+
+<!-- end_slide -->
+
+## Your turn 🐭
+
+![image:width:25%](assets/rat-question.gif)
+
+<!-- alignment: center -->
+
+**What gets printed, and in what order?**
+
+```rust +line_numbers
+fn main() {
+    let _a = Rat("A");
+    {
+        let _b = Rat("B");
+        let _c = Rat("C");
+    }
+    let _d = Rat("D");
+}
+```
+
+<!-- pause -->
+
+```
+🐭 C leaves
+🐭 B leaves
+🐭 D leaves
+🐭 A leaves
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+Inner scope ends first. Within a scope, **last in, first out.** 📚
+
+_(yes, it's a stack — that's the whole trick 🐭)_
 
 <!-- end_slide -->
 
@@ -408,6 +835,229 @@ You cannot "forget" them.
 
 <!-- end_slide -->
 
+## **Result** 🦀 _(but make it make sense)_
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:80%](assets/rat-sus.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 1 -->
+
+A function that can fail returns a **box with two slots**:
+
+<!-- pause -->
+
+🧀 `Ok(value)` — here's your cheese.
+
+<!-- pause -->
+
+🐱 `Err(reason)` — there's a cat. sorry.
+
+<!-- pause -->
+
+You **must** look inside before you can use it.
+
+<!-- pause -->
+
+No exceptions. No silent failures. No "oh I forgot that could fail." 🚫
+
+<!-- end_slide -->
+
+## **Result** 🦀 _(the `?` operator)_
+
+The verbose way:
+
+```rust {1-6|2-5} +line_numbers
+fn read_data() -> Result<String, std::io::Error> {
+    let s = match std::fs::read_to_string("data.txt") {
+        Ok(s) => s,
+        Err(e) => return Err(e),
+    };
+    Ok(s)
+}
+```
+
+<!-- pause -->
+
+The same thing, with `?`:
+
+```rust {1-4|2} +line_numbers
+fn read_data() -> Result<String, std::io::Error> {
+    let s = std::fs::read_to_string("data.txt")?;
+    Ok(s)
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+`?` means: **if `Err`, bail out. if `Ok`, unwrap and keep going.**
+
+The rat is happy. 🐭✨
+
+<!-- end_slide -->
+
+## Your turn 🐭
+
+![image:width:25%](assets/rat-question.gif)
+
+<!-- alignment: center -->
+
+This won't compile. **Why?** And how would you fix it?
+
+```rust +line_numbers
+fn main() {
+    let s = std::fs::read_to_string("count.txt");
+    println!("length is {}", s.len());
+}
+```
+
+<!-- pause -->
+
+`s` isn't a `String` — it's a `Result<String, _>`. You have to open the box first. 📦
+
+<!-- pause -->
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+### Option A: match it
+
+```rust
+match s {
+    Ok(s) => println!("{}", s.len()),
+    Err(e) => eprintln!("oops: {e}"),
+}
+```
+
+<!-- column: 1 -->
+
+### Option B: use `?`
+
+```rust
+fn main() -> std::io::Result<()> {
+    let s = std::fs::read_to_string("count.txt")?;
+    println!("{}", s.len());
+    Ok(())
+}
+```
+
+<!-- reset_layout -->
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+_(there's also `Option<T>` for "maybe a value" — same shape, same `?` 🐭)_
+
+<!-- end_slide -->
+
+## **Option** 🦀 _(no more null)_
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:80%](assets/rat-cry.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 2 -->
+
+> "I call it my **billion-dollar mistake.**"
+>
+> — Tony Hoare, on inventing null (1965)
+
+<!-- pause -->
+
+<!-- new_lines: 1 -->
+
+Most languages: **any** value might secretly be `null`.
+
+<!-- pause -->
+
+💥 `NullPointerException`  
+💥 `TypeError: undefined is not a function`  
+💥 `SIGSEGV`
+
+<!-- pause -->
+
+<!-- new_lines: 1 -->
+
+Rust: **there is no null.** 🚫
+
+<!-- pause -->
+
+If a value might be missing, it's **explicitly** wrapped:
+
+```rust
+Some("🧀")   // there's a value
+None         // there isn't
+```
+
+<!-- end_slide -->
+
+## **Option** 🦀 _(you have to look)_
+
+```rust {1-4|2|3} +line_numbers
+fn find_cheese(fridge: &[&str]) -> Option<&str> {
+    if fridge.contains(&"🧀") { Some("🧀") }
+    else { None }
+}
+```
+
+<!-- pause -->
+
+The compiler **refuses** to let you skip the check:
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+### `match`
+
+```rust
+match find_cheese(&fridge) {
+    Some(c) => println!("got {c}"),
+    None => println!("starving 🐭"),
+}
+```
+
+<!-- column: 1 -->
+
+### `if let`
+
+```rust
+if let Some(c) = find_cheese(&fridge) {
+    println!("got {c}");
+}
+```
+
+<!-- reset_layout -->
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+Need a default? Need to bail? Same toolkit as `Result`:
+
+```rust
+let cheese = find_cheese(&fridge).unwrap_or("🥖");
+let cheese = find_cheese(&fridge)?;
+```
+
+<!-- pause -->
+
+_(no nulls. no surprises. just types. 🐭✨)_
+
+<!-- end_slide -->
+
 <!-- alignment: center -->
 
 | Rust Concept | Prevents                   |
@@ -427,6 +1077,262 @@ You cannot "forget" them.
 <!-- alignment: center -->
 
 Now you are Rust-pilled.
+
+<!-- end_slide -->
+
+## ☕ Break — but first, install Rust
+
+<!-- column_layout: [2, 3] -->
+
+<!-- column: 0 -->
+
+![image:width:95%](assets/rat-drink.gif)
+
+<!-- alignment: center -->
+
+_the rat is on break._  
+_so should you be._
+
+<!-- column: 1 -->
+
+<!-- new_lines: 1 -->
+
+We're about to write Rust. So... **grab Rust.** 🐭
+
+#### Linux / macOS / WSL
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+#### Windows
+
+Visit `https://rustup.rs` → run `rustup-init.exe`
+
+#### Sanity check
+
+```bash
+rustc --version
+cargo --version
+```
+
+<!-- reset_layout -->
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+See you in **10 minutes.** ☕
+
+_(if it's still compiling, you're in the right place.)_
+
+<!-- end_slide -->
+
+<!-- alignment: center -->
+
+![image:width:30%](assets/lethimcook.gif)
+
+<!-- new_lines: 1 -->
+
+## Workshop 1 🛠️
+
+#### _Feed the Rat_
+
+<!-- new_lines: 1 -->
+
+~ 45 minutes
+
+<!-- no_footer -->
+
+<!-- end_slide -->
+
+## What we're building 🐭
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:90%](assets/rat-cook.png)
+
+<!-- column: 1 -->
+
+A tiny CLI. The rat is hungry. You feed it.
+
+```text
+🐭 the rat is hungry. (hunger: 3)
+> cheese
+🐭 *nibble nibble* (hunger: 2)
+> bread
+🐭 *crunch* (hunger: 1)
+> cat
+🐭 NO. NEVER. (hunger: 1)
+> cheese
+🐭 *burp* I'm full!
+```
+
+<!-- pause -->
+
+<!-- new_lines: 1 -->
+
+You'll touch: **ownership**, **`Result`/`?`**, **`enum` + `match`**, **`Option`**, **`mut`**, **`loop`**.
+
+<!-- end_slide -->
+
+## The plan 📋
+
+```bash
+$ cargo new feed-the-rat
+$ cd feed-the-rat
+```
+
+<!-- pause -->
+
+<!-- new_lines: 1 -->
+
+| Step | What you build              | What you learn                |
+| ---- | --------------------------- | ----------------------------- |
+| 1    | read a line from stdin      | `Result`, `?`, `&mut String`  |
+| 2    | parse it into a `Food` enum | `enum`, `match`, `Option`     |
+| 3    | track hunger, react         | `mut`, control flow           |
+| 4    | loop until full             | `loop`, `break`               |
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+_(each step compiles. don't skip ahead. 🐭)_
+
+<!-- end_slide -->
+
+## Step 1 🐭 _read the rat's order_
+
+```rust {1-12|5-6|7-9|10} +line_numbers
+use std::io::{self, Write};
+
+fn main() -> io::Result<()> {
+    print!("> ");
+    io::stdout().flush()?;
+
+    let mut line = String::new();
+    io::stdin().read_line(&mut line)?;
+
+    println!("you said: {}", line.trim());
+    Ok(())
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+`?` propagates the error. `&mut line` lets `read_line` write into it.
+
+`trim()` returns a `&str` — **borrowed**, not owned. 👀
+
+<!-- end_slide -->
+
+## Step 2 🐭 _name the food_
+
+```rust {1-15|1-5|7-14} +line_numbers
+enum Food {
+    Cheese,
+    Bread,
+    Cat,
+}
+
+fn parse_food(s: &str) -> Option<Food> {
+    match s {
+        "cheese" => Some(Food::Cheese),
+        "bread"  => Some(Food::Bread),
+        "cat"    => Some(Food::Cat),
+        _        => None,
+    }
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+The `_` arm is **mandatory** — `match` must cover every case.
+
+The compiler will yell at you otherwise. (lovingly.) 🐭❤️
+
+<!-- end_slide -->
+
+## Step 3 🐭 _track the hunger_
+
+```rust {1-12|1|3-11} +line_numbers
+let mut hunger: u8 = 3;
+
+match parse_food(line.trim()) {
+    Some(Food::Cheese) => { hunger -= 1; println!("🐭 *nibble nibble*"); }
+    Some(Food::Bread)  => { hunger -= 1; println!("🐭 *crunch*"); }
+    Some(Food::Cat)    => println!("🐭 NO. NEVER."),
+    None               => println!("🐭 ...what is that."),
+}
+
+println!("(hunger: {hunger})");
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+`mut` is opt-in. Without it, `hunger -= 1` doesn't compile.
+
+`match` on `Option<Food>` makes the "unknown food" case **impossible to forget.**
+
+<!-- end_slide -->
+
+## Step 4 🐭 _loop until full_
+
+```rust {1-7|1|4-6} +line_numbers
+loop {
+    // ... prompt, read, parse, feed (steps 1-3) ...
+
+    if hunger == 0 {
+        println!("🐭 *burp* I'm full!");
+        break;
+    }
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+That's it. You have a working Rust CLI. 🎉
+
+![image:width:25%](assets/rat-thumb.gif)
+
+<!-- end_slide -->
+
+## Stretch goals 🌟
+
+If you finished early — pick one:
+
+<!-- pause -->
+
+🥖 **Add more foods.** What does the rat think of pizza? grapes? a whole baguette?
+
+<!-- pause -->
+
+📊 **Track what it ate.** Push each `Food` into a `Vec<Food>`, print a summary at the end.
+
+<!-- pause -->
+
+📁 **Read from a file.** `std::fs::read_to_string("menu.txt")?` — same `?`, no stdin.
+
+<!-- pause -->
+
+💀 **Add a "rage quit" food.** If the rat sees `cat` 3 times, it leaves. (hint: `mut`)
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+_break — show & tell when we come back. 🐭_
 
 <!-- end_slide -->
 
