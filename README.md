@@ -1,4 +1,4 @@
-# Terminal Survival Guide
+# Intro to Rust
 
 ![](assets/banner.jpeg)
 
