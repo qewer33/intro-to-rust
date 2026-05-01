@@ -1,6 +1,6 @@
 ---
 theme:
-  name: tokyonight-storm
+  name: gruvbox-dark
   override:
     footer:
       style: template
@@ -8,7 +8,7 @@ theme:
       right: "{current_slide} / {total_slides}"
 ---
 
-![image:width:100%](assets/banner.jpeg)
+![](assets/banner.jpeg)
 
 <!-- no_footer -->
 
@@ -273,7 +273,17 @@ fn main() {
 }
 ```
 
-<!-- pause -->
+<!-- end_slide -->
+
+```rust +line_numbers
+fn main() {
+    let cheese = String::from("🧀");
+    let stolen = cheese;
+    println!("{}", cheese);
+}
+```
+
+---
 
 <!-- column_layout: [1, 1] -->
 
@@ -380,7 +390,7 @@ The rat owns the cheese. 🧀
 
 <!-- pause -->
 
-You can **look** at it.  → `&cheese`
+You can **look** at it. → `&cheese`
 
 <!-- pause -->
 
@@ -422,10 +432,6 @@ error[E0502]: cannot borrow `snacks` as mutable
 
 <!-- pause -->
 
-<!-- alignment: center -->
-
-You can't rearrange the buffet while someone's eating from it. 🍽️
-
 <!-- end_slide -->
 
 ## Your turn 🐭
@@ -445,7 +451,18 @@ fn main() {
 }
 ```
 
-<!-- pause -->
+<!-- end_slide -->
+
+```rust +line_numbers
+fn main() {
+    let mut name = String::from("Ratatui");
+    let r = &name;
+    name.push_str(" 🐭");
+    println!("{}", r);
+}
+```
+
+---
 
 <!-- column_layout: [1, 1] -->
 
@@ -602,7 +619,20 @@ fn main() {
 }
 ```
 
-<!-- pause -->
+<!-- end_slide -->
+
+```rust +line_numbers
+fn main() {
+    let r;
+    {
+        let cheese = String::from("🧀");
+        r = &cheese;
+    }
+    println!("{}", r);
+}
+```
+
+---
 
 <!-- column_layout: [1, 1] -->
 
@@ -713,7 +743,6 @@ Just `}`.
 
 ```rust {1-12|3-7|10|12} +line_numbers
 struct Rat;
-
 impl Drop for Rat {
     fn drop(&mut self) {
         println!("🐭 rat leaves the kitchen");
@@ -737,15 +766,13 @@ fn main() {
 
 <!-- alignment: center -->
 
-Cleanup runs **at the closing brace**, automatically, in reverse order.
-
 That's how `File`, `Vec`, `MutexGuard`, `TcpStream` all work. 🪄
 
 <!-- end_slide -->
 
 ## Your turn 🐭
 
-![image:width:25%](assets/rat-question.gif)
+![image:width:20%](assets/rat-question.gif)
 
 <!-- alignment: center -->
 
@@ -762,7 +789,18 @@ fn main() {
 }
 ```
 
-<!-- pause -->
+<!-- end_slide -->
+
+```rust +line_numbers
+fn main() {
+    let _a = Rat("A");
+    {
+        let _b = Rat("B");
+        let _c = Rat("C");
+    }
+    let _d = Rat("D");
+}
+```
 
 ```
 🐭 C leaves
@@ -885,16 +923,25 @@ fn read_data() -> Result<String, std::io::Error> {
 
 The same thing, with `?`:
 
-```rust {1-4|2} +line_numbers
+```rust +line_numbers
 fn read_data() -> Result<String, std::io::Error> {
     let s = std::fs::read_to_string("data.txt")?;
     Ok(s)
 }
 ```
 
-<!-- pause -->
+<!-- end_slide -->
 
 <!-- alignment: center -->
+
+The same thing, with `?`:
+
+```rust {1-4|2} +line_numbers
+fn read_data() -> Result<String, std::io::Error> {
+    let s = std::fs::read_to_string("data.txt")?;
+    Ok(s)
+}
+```
 
 `?` means: **if `Err`, bail out. if `Ok`, unwrap and keep going.**
 
@@ -919,9 +966,16 @@ fn main() {
 
 <!-- pause -->
 
-`s` isn't a `String` — it's a `Result<String, _>`. You have to open the box first. 📦
+`s` isn't a `String` — it's a `Result<String, _>`
 
-<!-- pause -->
+<!-- end_slide -->
+
+```rust +line_numbers
+fn main() {
+    let s = std::fs::read_to_string("count.txt");
+    println!("length is {}", s.len());
+}
+```
 
 <!-- column_layout: [1, 1] -->
 
@@ -992,7 +1046,7 @@ Most languages: **any** value might secretly be `null`.
 
 Rust: **there is no null.** 🚫
 
-<!-- pause -->
+<!-- end_slide -->
 
 If a value might be missing, it's **explicitly** wrapped:
 
@@ -1041,21 +1095,6 @@ if let Some(c) = find_cheese(&fridge) {
 
 <!-- reset_layout -->
 
-<!-- pause -->
-
-<!-- alignment: center -->
-
-Need a default? Need to bail? Same toolkit as `Result`:
-
-```rust
-let cheese = find_cheese(&fridge).unwrap_or("🥖");
-let cheese = find_cheese(&fridge)?;
-```
-
-<!-- pause -->
-
-_(no nulls. no surprises. just types. 🐭✨)_
-
 <!-- end_slide -->
 
 <!-- alignment: center -->
@@ -1082,7 +1121,7 @@ Now you are Rust-pilled.
 
 ## ☕ Break — but first, install Rust
 
-<!-- column_layout: [2, 3] -->
+<!-- column_layout: [2, 5] -->
 
 <!-- column: 0 -->
 
@@ -1090,8 +1129,9 @@ Now you are Rust-pilled.
 
 <!-- alignment: center -->
 
-_the rat is on break._  
-_so should you be._
+See you in **10 minutes.** ☕
+
+_(if it's still compiling, you're in the right place.)_
 
 <!-- column: 1 -->
 
@@ -1122,10 +1162,6 @@ cargo --version
 
 <!-- alignment: center -->
 
-See you in **10 minutes.** ☕
-
-_(if it's still compiling, you're in the right place.)_
-
 <!-- end_slide -->
 
 <!-- alignment: center -->
@@ -1148,11 +1184,11 @@ _(if it's still compiling, you're in the right place.)_
 
 ## What we're building 🐭
 
-<!-- column_layout: [1, 1] -->
+<!-- column_layout: [1, 2] -->
 
 <!-- column: 0 -->
 
-![image:width:90%](assets/rat-cook.png)
+![image:width:80%](assets/rat-cook.png)
 
 <!-- column: 1 -->
 
@@ -1189,12 +1225,14 @@ $ cd feed-the-rat
 
 <!-- new_lines: 1 -->
 
-| Step | What you build              | What you learn                |
-| ---- | --------------------------- | ----------------------------- |
-| 1    | read a line from stdin      | `Result`, `?`, `&mut String`  |
-| 2    | parse it into a `Food` enum | `enum`, `match`, `Option`     |
-| 3    | track hunger, react         | `mut`, control flow           |
-| 4    | loop until full             | `loop`, `break`               |
+<!-- alignment: center -->
+
+| Step | What you build              | What you learn               |
+| ---- | --------------------------- | ---------------------------- |
+| 1    | read a line from stdin      | `Result`, `?`, `&mut String` |
+| 2    | parse it into a `Food` enum | `enum`, `match`, `Option`    |
+| 3    | track hunger, react         | `mut`, control flow          |
+| 4    | loop until full             | `loop`, `break`              |
 
 <!-- pause -->
 
@@ -1266,10 +1304,14 @@ The compiler will yell at you otherwise. (lovingly.) 🐭❤️
 let mut hunger: u8 = 3;
 
 match parse_food(line.trim()) {
-    Some(Food::Cheese) => { hunger -= 1; println!("🐭 *nibble nibble*"); }
-    Some(Food::Bread)  => { hunger -= 1; println!("🐭 *crunch*"); }
-    Some(Food::Cat)    => println!("🐭 NO. NEVER."),
-    None               => println!("🐭 ...what is that."),
+  Some(Food::Cheese) => {
+        hunger -= 1; println!("🐭 *nibble nibble*");
+  }
+  Some(Food::Bread)  => {
+        hunger -= 1; println!("🐭 *crunch*");
+  }
+  Some(Food::Cat)    => println!("🐭 NO. NEVER."),
+  None               => println!("🐭 ...what is that."),
 }
 
 println!("(hunger: {hunger})");
