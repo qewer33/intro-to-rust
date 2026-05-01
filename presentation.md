@@ -1862,7 +1862,7 @@ A terminal is a **pipe.** Two streams.
 
 <!-- pause -->
 
-➡️ `stdin`  — what the user types  
+➡️ `stdin` — what the user types  
 ⬅️ `stdout` — what your program prints
 
 <!-- pause -->
@@ -1905,15 +1905,17 @@ hello, rat 🐭   (but in red)
 
 <!-- pause -->
 
-| Sequence    | Meaning           |
-| ----------- | ----------------- |
-| `\x1b[31m`  | switch to red     |
-| `\x1b[32m`  | switch to green   |
-| `\x1b[0m`   | reset             |
-| `\x1b[2J`   | clear screen      |
-| `\x1b[H`    | cursor home       |
+<!-- alignment: center -->
 
-<!-- pause -->
+| Sequence   | Meaning         |
+| ---------- | --------------- |
+| `\x1b[31m` | switch to red   |
+| `\x1b[32m` | switch to green |
+| `\x1b[0m`  | reset           |
+| `\x1b[2J`  | clear screen    |
+| `\x1b[H`   | cursor home     |
+
+<!-- end_slide -->
 
 <!-- alignment: center -->
 
@@ -1923,7 +1925,7 @@ That's the **entire** secret behind every fancy terminal app.
 
 <!-- pause -->
 
-_(Ratatui sends these for you. with widgets. and layouts. and good taste. 🐭✨)_
+_(Ratatui sends these for you. with widgets. and layouts. and good taste.)_
 
 <!-- end_slide -->
 
@@ -2062,17 +2064,12 @@ loop {
 Other UI frameworks: build the widget tree **once**, then mutate it.
 
 ```js
-button.setText("hi")
+button.setText("hi");
 ```
 
 <!-- pause -->
 
 Ratatui: **redraw the whole UI from scratch.** Every frame.
-
-<!-- pause -->
-
-🐭 _the rat is an etch-a-sketch._  
-_shake → blank canvas → redraw._
 
 <!-- pause -->
 
@@ -2114,7 +2111,7 @@ error[E0382]: use of moved value: `para`
 Widgets are **values**, not objects.  
 `render_widget` consumes them.
 
-<!-- pause -->
+<!-- end_slide -->
 
 The fix: build the widget **inside** the closure, fresh each frame.
 
@@ -2139,8 +2136,6 @@ loop {
 
 ## Your turn 🐭
 
-![image:width:25%](assets/rat-question.gif)
-
 <!-- alignment: center -->
 
 The counter ticks. The display **doesn't.** Why?
@@ -2163,7 +2158,7 @@ loop {
 
 The string is hardcoded. `count` is incremented but **never used** to build the widget. 🐭🤦
 
-<!-- pause -->
+<!-- end_slide -->
 
 ### The fix
 
@@ -2220,14 +2215,6 @@ let [header, content, footer]
 ```
 
 <!-- reset_layout -->
-
-<!-- pause -->
-
-<!-- alignment: center -->
-
-The terminal can be **any size.** Constraints adapt. 🐭✨
-
-Resize the window → the layout re-flows. _No pixels were harmed._
 
 <!-- end_slide -->
 
@@ -2781,13 +2768,15 @@ $ cargo add ratatui
 
 <!-- new_lines: 1 -->
 
-| Step | What you build              | What it teaches              |
-| ---- | --------------------------- | ---------------------------- |
-| 1    | hello terminal, quit on `q` | `init`/`restore`, draw loop  |
-| 2    | hunger as a `Gauge`         | widget rendering, state      |
-| 3    | keys feed the rat           | `event::read()` + `match`    |
-| 4    | split layout + reaction     | `Layout`, `Paragraph`        |
-| 5    | game over screen            | conditional rendering        |
+<!-- alignment: center -->
+
+| Step | What you build              | What it teaches             |
+| ---- | --------------------------- | --------------------------- |
+| 1    | hello terminal, quit on `q` | `init`/`restore`, draw loop |
+| 2    | hunger as a `Gauge`         | widget rendering, state     |
+| 3    | keys feed the rat           | `event::read()` + `match`   |
+| 4    | split layout + reaction     | `Layout`, `Paragraph`       |
+| 5    | game over screen            | conditional rendering       |
 
 <!-- pause -->
 
