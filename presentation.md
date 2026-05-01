@@ -1643,14 +1643,6 @@ assert_eq!(lines.next().unwrap()?, "err");
 
 <!-- end_slide -->
 
-## Demo time
-
-Let's vibe code an app.
-
-![](assets/rat-eyes.gif)
-
-<!-- end_slide -->
-
 <!-- alignment: center -->
 
 ![image:width:30%](assets/enchanting-table.gif)
@@ -1812,6 +1804,87 @@ cargo run --manifest-path ratatui/examples/apps/demo2/Cargo.toml
 
 <!-- end_slide -->
 
+## **Wait — how does it do that?** 🦀
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:80%](assets/rat-eyes.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 1 -->
+
+A terminal is a **pipe.** Two streams.
+
+<!-- pause -->
+
+➡️ `stdin`  — what the user types  
+⬅️ `stdout` — what your program prints
+
+<!-- pause -->
+
+<!-- new_lines: 1 -->
+
+That's it.
+
+No widgets. No colors. No cursor magic.
+
+<!-- pause -->
+
+<!-- new_lines: 1 -->
+
+So how did Ratatui just paint the whole screen?
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+🐭 _it sends **sneaky bytes.**_ 👀
+
+<!-- end_slide -->
+
+## **ANSI escape codes** 🦀 _(the sneaky bytes)_
+
+```rust {1-5|2-4} +line_numbers
+fn main() {
+    print!("\x1b[31m");
+    print!("hello, rat 🐭");
+    println!("\x1b[0m");
+}
+```
+
+<!-- pause -->
+
+```
+hello, rat 🐭   (but in red)
+```
+
+<!-- pause -->
+
+| Sequence    | Meaning           |
+| ----------- | ----------------- |
+| `\x1b[31m`  | switch to red     |
+| `\x1b[32m`  | switch to green   |
+| `\x1b[0m`   | reset             |
+| `\x1b[2J`   | clear screen      |
+| `\x1b[H`    | cursor home       |
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+That's the **entire** secret behind every fancy terminal app.
+
+`htop`, `vim`, `tmux`, `oryx`, **the demo you just saw**... all just bytes. 🤯
+
+<!-- pause -->
+
+_(Ratatui sends these for you. with widgets. and layouts. and good taste. 🐭✨)_
+
+<!-- end_slide -->
+
 <!-- column_layout: [1, 1] -->
 
 <!-- column: 0 -->
@@ -1929,6 +2002,190 @@ loop {
 <!-- new_lines: 7 -->
 
 ![](assets/rat-dance.gif)
+
+<!-- end_slide -->
+
+## **Immediate mode** 🐭 _(but make it make sense)_
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:80%](assets/rat-spin.gif)
+
+<!-- column: 1 -->
+
+<!-- new_lines: 1 -->
+
+Other UI frameworks: build the widget tree **once**, then mutate it.
+
+```js
+button.setText("hi")
+```
+
+<!-- pause -->
+
+Ratatui: **redraw the whole UI from scratch.** Every frame.
+
+<!-- pause -->
+
+🐭 _the rat is an etch-a-sketch._  
+_shake → blank canvas → redraw._
+
+<!-- pause -->
+
+No diffing. No retained tree. No "remember this widget."
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+You give Ratatui the **current state**, it gives you a **frame.** ✨
+
+<!-- end_slide -->
+
+## **Immediate mode** 🐭 _(the trap)_
+
+```rust {1-7|1|4|5} +line_numbers
+let para = Paragraph::new("hi 🐭");
+
+loop {
+    terminal.draw(|frame| {
+        frame.render_widget(para, frame.area());
+    })?;
+}
+```
+
+<!-- pause -->
+
+```
+error[E0382]: use of moved value: `para`
+5 |         frame.render_widget(para, frame.area());
+  |                             ^^^^ value moved here,
+  |                                  in previous iteration of loop
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+Widgets are **values**, not objects.  
+`render_widget` consumes them.
+
+<!-- pause -->
+
+The fix: build the widget **inside** the closure, fresh each frame.
+
+```rust {1-7|1|5} +line_numbers
+let text = "hi 🐭"; // state lives out here
+
+loop {
+    terminal.draw(|frame| {
+        let para = Paragraph::new(text); // built fresh
+        frame.render_widget(para, frame.area());
+    })?;
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+🐭 **State outside the closure. Widgets inside.**
+
+<!-- end_slide -->
+
+## Your turn 🐭
+
+![image:width:25%](assets/rat-question.gif)
+
+<!-- alignment: center -->
+
+The counter ticks. The display **doesn't.** Why?
+
+```rust +line_numbers
+let mut count = 0;
+
+loop {
+    terminal.draw(|frame| {
+        let para = Paragraph::new("count: 0");
+        frame.render_widget(para, frame.area());
+    })?;
+    count += 1;
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+The string is hardcoded. `count` is incremented but **never used** to build the widget. 🐭🤦
+
+<!-- pause -->
+
+### The fix
+
+```rust
+let para = Paragraph::new(format!("count: {count}"));
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+_If it's not in the next frame's draw call, it's not on screen._
+
+<!-- end_slide -->
+
+## **Layout** 🐭 _(constraints, not pixels)_
+
+You don't say _"widget at x=10, y=20."_
+
+<!-- pause -->
+
+You say: **"this gets N rows. that gets the rest."**
+
+<!-- pause -->
+
+<!-- column_layout: [3, 4] -->
+
+<!-- column: 0 -->
+
+```rust +line_numbers
+let [header, content, footer]
+  = Layout::vertical([
+    Constraint::Length(3),
+    Constraint::Min(1),
+    Constraint::Length(3),
+  ]).areas(frame.area());
+```
+
+<!-- column: 1 -->
+
+```text
+┌──────────────────┐
+│                  │ Length(3)
+│      header      │
+├──────────────────┤
+│                  │
+│      content     │ Min(1)
+│                  │
+│                  │
+├──────────────────┤
+│                  │ Length(3)
+│      footer      │
+└──────────────────┘
+```
+
+<!-- reset_layout -->
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+The terminal can be **any size.** Constraints adapt. 🐭✨
+
+Resize the window → the layout re-flows. _No pixels were harmed._
 
 <!-- end_slide -->
 
@@ -2418,6 +2675,257 @@ Live demo at Rust Forge!
 <!-- alignment: center -->
 
 [](https://www.youtube.com/watch?v=btqNDDuZ3cI)
+
+<!-- end_slide -->
+
+<!-- alignment: center -->
+
+![image:width:30%](assets/lethimcook.gif)
+
+<!-- new_lines: 1 -->
+
+## Workshop 2 🛠️
+
+#### _Feed the Rat — TUI edition_
+
+<!-- new_lines: 1 -->
+
+~ 90 minutes
+
+<!-- no_footer -->
+
+<!-- end_slide -->
+
+## What we're building 🐭
+
+<!-- column_layout: [1, 1] -->
+
+<!-- column: 0 -->
+
+![image:width:90%](assets/rat-cook.png)
+
+<!-- column: 1 -->
+
+Same rat. Same hunger. **Now in Ratatui.** ✨
+
+```text
+┌─ feed the rat ────────────┐
+│                           │
+│  hunger: 3 ▰▰▰▰▰▰▰▰▰▰     │
+│                           │
+│  🐭 *nibble nibble*       │
+│                           │
+│  [c]heese [b]read [q]uit  │
+└───────────────────────────┘
+```
+
+<!-- pause -->
+
+<!-- new_lines: 1 -->
+
+You'll touch: **`Gauge`**, **`Paragraph`**, **`Layout`**, the **draw loop**, **`event::read()`**.
+
+<!-- end_slide -->
+
+## The plan 📋
+
+```bash
+$ cargo new feed-the-rat-tui
+$ cd feed-the-rat-tui
+$ cargo add ratatui
+```
+
+<!-- pause -->
+
+<!-- new_lines: 1 -->
+
+| Step | What you build              | What it teaches              |
+| ---- | --------------------------- | ---------------------------- |
+| 1    | hello terminal, quit on `q` | `init`/`restore`, draw loop  |
+| 2    | hunger as a `Gauge`         | widget rendering, state      |
+| 3    | keys feed the rat           | `event::read()` + `match`    |
+| 4    | split layout + reaction     | `Layout`, `Paragraph`        |
+| 5    | game over screen            | conditional rendering        |
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+_each step compiles. don't skip ahead. 🐭_
+
+<!-- end_slide -->
+
+## Step 1 🐭 _hello, terminal_
+
+```rust {1-17|5,15|6-13|7-9|10-12} +line_numbers
+use ratatui::crossterm::event::{self, Event, KeyCode};
+use ratatui::Frame;
+
+fn main() -> std::io::Result<()> {
+    let mut terminal = ratatui::init();
+    loop {
+        terminal.draw(|frame: &mut Frame| {
+            frame.render_widget("feed the rat 🐭", frame.area());
+        })?;
+        if let Event::Key(key) = event::read()? {
+            if key.code == KeyCode::Char('q') { break; }
+        }
+    }
+    ratatui::restore();
+    Ok(())
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+`init()` / `restore()` set up & tear down raw mode for you.
+
+`event::read()` blocks until a key arrives.
+
+<!-- end_slide -->
+
+## Step 2 🐭 _the hunger gauge_
+
+```rust {1-14|3-4|6-13|9-11} +line_numbers
+use ratatui::widgets::{Block, Gauge};
+
+let mut hunger: u16 = 3;
+let mut reaction = "🐭 hungry...";
+
+terminal.draw(|frame| {
+    let gauge = Gauge::default()
+        .block(Block::bordered().title("feed the rat"))
+        .ratio(hunger as f64 / 3.0)
+        .label(format!("hunger: {hunger}"));
+
+    frame.render_widget(gauge, frame.area());
+})?;
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+`Gauge` takes a `ratio` between **0.0 and 1.0**, plus an optional label.
+
+State lives in `main`; the closure **borrows** it. 🐭
+
+<!-- end_slide -->
+
+## Step 3 🐭 _keys feed the rat_
+
+```rust {1-11|3-4|5|6|7} +line_numbers
+if let Event::Key(key) = event::read()? {
+    match key.code {
+        KeyCode::Char('c') => { hunger = hunger.saturating_sub(1);
+                                reaction = "🐭 *nibble nibble*"; }
+        KeyCode::Char('b') => { hunger = hunger.saturating_sub(1);
+                                reaction = "🐭 *crunch*"; }
+        KeyCode::Char('x') => reaction = "🐭 NO. NEVER.",
+        KeyCode::Char('q') => break,
+        _ => {}
+    }
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+`saturating_sub` clamps at 0 — no underflow panic when the rat is full.
+
+`match` on `KeyCode` is exhaustive — the compiler won't let you forget a case. 🐭
+
+<!-- end_slide -->
+
+## Step 4 🐭 _split the screen_
+
+```rust {1-16|4-7|9|11-14} +line_numbers
+use ratatui::layout::{Constraint, Layout};
+use ratatui::widgets::Paragraph;
+
+let [top, bottom] = Layout::vertical([
+    Constraint::Length(3),
+    Constraint::Min(1),
+]).areas(frame.area());
+
+frame.render_widget(gauge, top);
+
+frame.render_widget(
+    Paragraph::new(reaction).block(Block::bordered()),
+    bottom,
+);
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+`Layout::vertical` slices the area into one `Rect` per constraint.
+
+Each widget renders into **its own region.** No pixels. No coordinates. Just constraints. 🐭✨
+
+<!-- end_slide -->
+
+## Step 5 🐭 _game over_
+
+```rust {1-11|1|3-9} +line_numbers
+if hunger == 0 {
+    terminal.draw(|frame| {
+        let msg = "🐭 *burp* I'm full!\n\npress any key to exit.";
+        frame.render_widget(
+            Paragraph::new(msg)
+                .centered()
+                .block(Block::bordered()),
+            frame.area(),
+        );
+    })?;
+    let _ = event::read();
+    break;
+}
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+Conditional rendering = **just an `if`** in your draw logic.
+
+The whole UI is **redrawn every frame.** That's the immediate-mode magic. 🪄
+
+<!-- new_lines: 1 -->
+
+![image:width:25%](assets/rat-thumb.gif)
+
+<!-- end_slide -->
+
+## Stretch goals 🌟
+
+If you finished early — pick one:
+
+<!-- pause -->
+
+📊 **Track what it ate.** Push each food into a `Vec<&str>`, render it as a `List` widget on the side.
+
+<!-- pause -->
+
+📈 **Hunger over time.** Use a `Sparkline` or `Chart` to show hunger ticking down.
+
+<!-- pause -->
+
+🪟 **Popup on game over.** Center a smaller `Block` over the main area instead of replacing it.
+
+<!-- pause -->
+
+🎨 **Style it.** Color the gauge red when low, green when high. `Style::new().fg(Color::Red)`.
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+_break — show & tell when we come back. 🐭_
 
 <!-- end_slide -->
 
