@@ -2952,11 +2952,100 @@ If you finished early — pick one:
 
 🎨 **Style it.** Color the gauge red when low, green when high. `Style::new().fg(Color::Red)`.
 
+<!-- end_slide -->
+
+## Stretch goal 1 🐭 _state struct_
+
+Instead of loose variables in `main`, create a struct:
+
+```rust
+struct App {
+    hunger: u16,
+    reaction: &'static str,
+}
+```
+
+<!-- pause -->
+
+Then pass `&App` into your draw function:
+
+```rust
+fn draw(frame: &mut Frame, app: &App) {
+    // render from app.hunger / app.reaction
+}
+```
+
 <!-- pause -->
 
 <!-- alignment: center -->
 
-_break — show & tell when we come back. 🐭_
+Same app. Better shape. Easier to grow. 🐭
+
+<!-- end_slide -->
+
+## Stretch goal 2 🐭 _split UI + history_
+
+Add history and split the screen:
+
+```rust
+struct App {
+    hunger: u16,
+    reaction: &'static str,
+    history: Vec<&'static str>,
+}
+```
+
+<!-- pause -->
+
+```text
+┌─ feed the rat ─────┬───────┐
+│ hunger: 2 ▰▰▰▰▰▰   │ ate   │
+│                    │       │
+│ 🐭 *crunch*        │ bread │
+│                    │ cheese│
+│ [c]heese [b]read   │       │
+│ [x]cat    [q]uit   │       │
+└────────────────────┴───────┘
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+Hint: `Layout::horizontal([...])` + `List::new(...)`
+
+<!-- end_slide -->
+
+## Stretch goal 3 🐭 _add a popup_
+
+Instead of replacing the whole screen, draw a centered popup:
+
+```text
+┌─ feed the rat ────────────┐
+│ hunger: 0                 │
+│                           │
+│     ┌─ game over ────┐    │
+│     │ 🐭 I'm full!   │    │
+│     │ press any key  │    │
+│     └────────────────┘    │
+└───────────────────────────┘
+```
+
+<!-- pause -->
+
+```rust
+let area = popup_area(frame.area(), 60, 30);
+let popup = Paragraph::new(msg)
+    .centered()
+    .block(Block::bordered().title("game over"));
+frame.render_widget(popup, area);
+```
+
+<!-- pause -->
+
+<!-- alignment: center -->
+
+Hint: split with percentages, then render the popup into the center `Rect`.
 
 <!-- end_slide -->
 
